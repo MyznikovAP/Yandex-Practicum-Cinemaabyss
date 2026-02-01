@@ -33,18 +33,15 @@ function proxyGradualPath(pathPrefix, target, proxyTarget) {
     router: (req) => {
       if (GRADUAL_MIGRATION) {
         const migrationChoice = Math.random() * 100;
-        req.result_host = migrationChoice < MOVIES_MIGRATION_PERCENT 
-          ? proxyTarget 
-          : target;
-        return req.result_host;
+        // Инвертированная логика: если условие выполняется, идем на proxyTarget
+        return migrationChoice < MOVIES_MIGRATION_PERCENT 
+          ? proxyTarget  // Новый сервер
+          : target;      // Старый сервер
       }
-      req.result_host = proxyTarget;
+      // По умолчанию всегда на proxyTarget (новый сервер)
       return proxyTarget;
     },
     changeOrigin: true,
-    onProxyReq: (proxyReq, req, res) => {
-      proxyReq.setHeader('host', new URL(result_host).host);
-    },
   }));
 }
 
