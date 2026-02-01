@@ -21,6 +21,7 @@ type Movie struct {
 	Description string   `json:"description"`
 	Genres      []string `json:"genres"`
 	Rating      float64  `json:"rating"`
+	Test        string   `json:"test"`
 }
 
 func main() {
@@ -97,6 +98,7 @@ func getAllMovies(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		m.Test = fmt.Sprintf("%d%s", m.ID, "-test")
 
 		// Get genres for this movie
 		genreRows, err := db.Query("SELECT genre FROM movie_genres WHERE movie_id = $1", m.ID)
