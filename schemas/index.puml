@@ -6,6 +6,8 @@
 ' Контекст-Система
 Person(user, "Пользователь", "")
 System_Boundary(cinema, "CinemaAbyss") {
+  note right of cinema : Deployed on Kubernetes with Istio
+
   System(apiGateway, "API Gateway", "Единая точка входа для пользователя (HTTP)")
   ContainerDb(db, "PostgreSQL", "Database", "Хранит всю информацию: users, movies, payments, subscriptions")
   Container(userService, "User Service", "Microservice", "Управление пользователями")
