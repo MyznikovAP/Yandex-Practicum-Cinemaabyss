@@ -1,0 +1,35 @@
+@startuml C4_Containers
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Deployment.puml
+
+title C4 Level 2: Диаграмма контейнеров - Сервис Movie
+
+Deployment_Node(movie_service, "Movie Service", "Управление фильмами") {
+  Deployment_Node(movie_delivery, "Movie Delivery", "") {
+    Container(movie_service_content, "Доставка контента", "Microservice", "")
+  }
+
+  Deployment_Node(movie_control, "Movie Control", "") {
+    Container(s3_bucket, "Хранилище фильмов", "S3", "Видеофайлы, постеры, субтитры: Мета-данные хранятся в БД")
+    Container(search_engine, "Elastic", "Поисковый движок", "Полнотекстовый поиск по фильмам")
+    Container(movie_service_controller, "Управление", "Microservice", "Управление состоянием")
+  }
+  
+  Deployment_Node(db_movie_service, "Db Movie Service", "Хранит всю информацию: movies") {
+    ContainerDb(movie_postgres, "PostgreSQL Only-Read", "База данных")
+  }
+  
+  Deployment_Node(cache, "Cache", "Managed Redis") {
+    ContainerDb(redis, "Redis", "Кэш-сервер")
+  }
+}
+
+Rel(movie_service_content, search_engine, "Чтение/запись", "API")
+Rel(search_engine, redis, "Чтение/запись", "API")
+
+Rel(movie_service_controller, search_engine, "Чтение/запись", "API")
+Rel(movie_service_controller, movie_postgres, "Запись", "SQL")
+Rel(movie_service_controller, redis, "Кэширование", "Redis protocol")
+Rel(movie_service_controller, s3_bucket, "Получение/Запись контента", "S3 API")
+
+@enduml

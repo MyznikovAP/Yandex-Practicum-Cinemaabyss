@@ -1,0 +1,4 @@
+@startuml
+!include ./main-domains.puml
+!include ./movies-component.puml
+@enduml 

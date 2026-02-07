@@ -1,0 +1,61 @@
+@startuml
+!includeurl https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+!includeurl https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+!includeurl https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+' Контекст-Система
+Person(user, "Пользователь", "")
+System_Boundary(cinema, "Сервис фильмов") {
+  note right of cinema : Deployed on Kubernetes with Istio
+
+  System(api_gateway, "API Gateway", "Единая точка входа для пользователя (HTTP)")
+
+  Container(user_service, "User Service", "Microservice", "Управление пользователями")
+  ContainerDb(db_user_service, "Db User Service", "PostgreSQL", "Хранит всю информацию: users")
+
+  Container(movie_service, "Movie Service", "Microservice", "Управление фильмами")
+  Container(streaming_service, "Streaming Service", "Microservice", "Доставка фильмов")
+  
+  Container(payment_service, "Payment Service", "Microservice", "Оплата")
+  ContainerDb(db_payment_service, "Db Payment Service", "PostgreSQL", "Хранит всю информацию: payments")
+
+  Container(subscription_service, "Subscription Service", "Microservice", "Управление подписками")
+  ContainerDb(db_subscription_service, "Db Subscription Service", "PostgreSQL", "Хранит всю информацию:subscriptions")
+
+  Container(kafka, "Kafka Broker", "Message broker", "Доставка событий рекомендаций")
+
+  Container(recommendation_service, "Recommendation Service", "Microservice", "Отвечает за предоставление рекомендаций пользователю")
+  ContainerDb(db_recommendation_service, "Db Recommendation Service", "PostgreSQL", "Хранит всю информацию: recommendations")
+}
+System_Boundary(auth, "Аутентификация/OAuth") {
+  Container(auth_service, "Стороние системы аутентификации", "Service", "Позволяет аутентифицироваться через стороние системы")
+}
+Rel(user, api_gateway, "", "HTTPS")
+
+' Связи контейнеров
+Rel(api_gateway, user_service, "REST/JSON", "CRUD")
+Rel(api_gateway, user_service, "REST/JSON", "Auth")
+Rel(user_service, auth_service, "REST/JSON", "Auth")
+Rel(auth_service, user_service, "REST/JSON", "Auth")
+Rel(api_gateway, movie_service, "REST/JSON", "CRUD & поиск")
+Rel(movie_service, streaming_service, "REST/JSON", "Инициализация доставки")
+Rel(streaming_service, api_gateway, "TCP(HTTPS)", "доставка контента")
+Rel(api_gateway, payment_service, "REST/JSON", "Оплата")
+Rel(api_gateway, subscription_service, "REST/JSON", "CRUD")
+Rel(api_gateway, recommendation_service, "REST/JSON", "Получение рекомендаций")
+
+' Хранение данных
+Rel(user_service, db_user_service, "SQL", "Users")
+Rel(payment_service, db_payment_service, "SQL", "Payments")
+Rel(subscription_service, db_subscription_service, "SQL", "Subscriptions")
+
+' Рекомендации в Kafka
+Rel(kafka, recommendation_service, "Consume", "Расчитанные рекомендации")
+Rel(user_service, kafka, "Produces", "Отправка в кафку запросов пользователей по фильмам")
+Rel(recommendation_service, user_service, "Read", "Предпочтения пользователей")
+Rel(recommendation_service, db_recommendation_service, "Read/Write", "Кэш рекомендаций")
+
+' api_gateway
+Rel(user, api_gateway, "HTTPS", "Запросы")
+
+@enduml
